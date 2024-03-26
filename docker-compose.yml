@@ -1,61 +1,38 @@
-version: '3'
+version: "1.0"
 
 services:
   namenode:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        NODE_TYPE: namenode
-    container_name: namenode
+    image: sequenceiq/hadoop-docker  
     hostname: namenode
     ports:
       - "50070:50070"
       - "8088:8088"
+    environment:
+      HADOOP_NAMENODE_FORMAT: "true" 
     volumes:
-      - namenode_data:/hadoop/dfs/name
+      - hadoop-namenode:/hadoop/hdfs/namenode  
 
   datanode1:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        NODE_TYPE: datanode
-    container_name: datanode1
+    image: sequenceiq/hadoop-docker 
     hostname: datanode1
     volumes:
-      - datanode1_data:/hadoop/dfs/data
-    environment:
-      - "SERVICE_PRECONDITION=namenode:50070"
+      - hadoop-datanode1:/hadoop/hdfs/datanode
 
   datanode2:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        NODE_TYPE: datanode
-    container_name: datanode2
+    image: sequenceiq/hadoop-docker  
     hostname: datanode2
     volumes:
-      - datanode2_data:/hadoop/dfs/data
-    environment:
-      - "SERVICE_PRECONDITION=namenode:50070"
+      - hadoop-datanode2:/hadoop/hdfs/datanode
 
   datanode3:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        NODE_TYPE: datanode
-    container_name: datanode3
+    image: sequenceiq/hadoop-docker  
     hostname: datanode3
     volumes:
-      - datanode3_data:/hadoop/dfs/data
-    environment:
-      - "SERVICE_PRECONDITION=namenode:50070"
+      - hadoop-datanode3:/hadoop/hdfs/datanode
 
 volumes:
-  namenode_data:
-  datanode1_data:
-  datanode2_data:
-  datanode3_data:
+  hadoop-namenode: {}
+  hadoop-datanode1: {}
+  hadoop-datanode2: {}
+  hadoop-datanode3: {}
+
