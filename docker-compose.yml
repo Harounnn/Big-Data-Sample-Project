@@ -1,0 +1,61 @@
+version: '3'
+
+services:
+  namenode:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NODE_TYPE: namenode
+    container_name: namenode
+    hostname: namenode
+    ports:
+      - "50070:50070"
+      - "8088:8088"
+    volumes:
+      - namenode_data:/hadoop/dfs/name
+
+  datanode1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NODE_TYPE: datanode
+    container_name: datanode1
+    hostname: datanode1
+    volumes:
+      - datanode1_data:/hadoop/dfs/data
+    environment:
+      - "SERVICE_PRECONDITION=namenode:50070"
+
+  datanode2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NODE_TYPE: datanode
+    container_name: datanode2
+    hostname: datanode2
+    volumes:
+      - datanode2_data:/hadoop/dfs/data
+    environment:
+      - "SERVICE_PRECONDITION=namenode:50070"
+
+  datanode3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NODE_TYPE: datanode
+    container_name: datanode3
+    hostname: datanode3
+    volumes:
+      - datanode3_data:/hadoop/dfs/data
+    environment:
+      - "SERVICE_PRECONDITION=namenode:50070"
+
+volumes:
+  namenode_data:
+  datanode1_data:
+  datanode2_data:
+  datanode3_data:
