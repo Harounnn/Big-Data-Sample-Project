@@ -50,3 +50,8 @@ volumes:
 ```bash
 docker-compose up -d
 ```
+3. When finished , you can browse http://localhost:8088 to view the cluster information .
+4. Finally stop the cluster by :
+```bash
+docker-compose down
+```
