@@ -1,38 +1,55 @@
-version: "1.0"
+version: "2.0"
 
 services:
   namenode:
-    image: sequenceiq/hadoop-docker  
-    hostname: namenode
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode
+    restart: always
     ports:
-      - "50070:50070"
-      - "8088:8088"
-    environment:
-      HADOOP_NAMENODE_FORMAT: "true" 
+      - 9870:9870
+      - 9000:9000
     volumes:
-      - hadoop-namenode:/hadoop/hdfs/namenode  
+      - hadoop_namenode:/hadoop/dfs/name
+    environment:
+      - CLUSTER_NAME=test
+    env_file:
+      - ./hadoop.env
 
   datanode1:
-    image: sequenceiq/hadoop-docker 
-    hostname: datanode1
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode
+    restart: always
     volumes:
-      - hadoop-datanode1:/hadoop/hdfs/datanode
+      - hadoop_datanode1:/hadoop/dfs/data
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870"
+    env_file:
+      - ./hadoop.env
 
   datanode2:
-    image: sequenceiq/hadoop-docker  
-    hostname: datanode2
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode2
+    restart: always
     volumes:
-      - hadoop-datanode2:/hadoop/hdfs/datanode
+      - hadoop_datanode2:/hadoop/dfs/data
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870"
+    env_file:
+      - ./hadoop.env
 
   datanode3:
-    image: sequenceiq/hadoop-docker  
-    hostname: datanode3
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode3
+    restart: always
     volumes:
-      - hadoop-datanode3:/hadoop/hdfs/datanode
-
+      - hadoop_datanode3:/hadoop/dfs/data
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870"
+    env_file:
+      - ./hadoop.env
+  
 volumes:
-  hadoop-namenode: {}
-  hadoop-datanode1: {}
-  hadoop-datanode2: {}
-  hadoop-datanode3: {}
-
+  hadoop_namenode:
+  hadoop_datanode1:
+  hadoop_datanode2:
+  hadoop_datanode3:

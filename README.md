@@ -8,50 +8,91 @@ docker-compose version
 In this part, we will setup a 4-node hadoop cluster (1 master & 3 slaves)
 1. Write the following inside 'docker-compose.yml' file :
 ```
-version: "1.0"
+version: "2.0"
 
 services:
   namenode:
-    image: sequenceiq/hadoop-docker  
-    hostname: namenode
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode
+    restart: always
     ports:
-      - "50070:50070"
-      - "8088:8088"
-    environment:
-      HADOOP_NAMENODE_FORMAT: "true" 
+      - 9870:9870
+      - 9000:9000
     volumes:
-      - hadoop-namenode:/hadoop/hdfs/namenode  
+      - hadoop_namenode:/hadoop/dfs/name
+    environment:
+      - CLUSTER_NAME=test
+    env_file:
+      - ./hadoop.env
 
   datanode1:
-    image: sequenceiq/hadoop-docker 
-    hostname: datanode1
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode
+    restart: always
     volumes:
-      - hadoop-datanode1:/hadoop/hdfs/datanode
+      - hadoop_datanode1:/hadoop/dfs/data
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870"
+    env_file:
+      - ./hadoop.env
 
   datanode2:
-    image: sequenceiq/hadoop-docker  
-    hostname: datanode2
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode2
+    restart: always
     volumes:
-      - hadoop-datanode2:/hadoop/hdfs/datanode
+      - hadoop_datanode2:/hadoop/dfs/data
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870"
+    env_file:
+      - ./hadoop.env
 
   datanode3:
-    image: sequenceiq/hadoop-docker  
-    hostname: datanode3
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode3
+    restart: always
     volumes:
-      - hadoop-datanode3:/hadoop/hdfs/datanode
-
+      - hadoop_datanode3:/hadoop/dfs/data
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870"
+    env_file:
+      - ./hadoop.env
+  
 volumes:
-  hadoop-namenode: {}
-  hadoop-datanode1: {}
-  hadoop-datanode2: {}
-  hadoop-datanode3: {}
+  hadoop_namenode:
+  hadoop_datanode1:
+  hadoop_datanode2:
+  hadoop_datanode3:
 ```
-2. Save and type :
+2. Save and create a file 'hadoop.env' and write inside it :
+```
+CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+CORE_CONF_hadoop_http_staticuser_user=root
+CORE_CONF_hadoop_proxyuser_hue_hosts=*
+CORE_CONF_hadoop_proxyuser_hue_groups=*
+CORE_CONF_io_compression_codecs=org.apache.hadoop.io.compress.SnappyCodec
+
+HDFS_CONF_dfs_webhdfs_enabled=true
+HDFS_CONF_dfs_permissions_enabled=false
+HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false
+
+MAPRED_CONF_mapreduce_framework_name=yarn
+MAPRED_CONF_mapred_child_java_opts=-Xmx4096m
+MAPRED_CONF_mapreduce_map_memory_mb=4096
+MAPRED_CONF_mapreduce_reduce_memory_mb=8192
+MAPRED_CONF_mapreduce_map_java_opts=-Xmx3072m
+MAPRED_CONF_mapreduce_reduce_java_opts=-Xmx6144m
+MAPRED_CONF_yarn_app_mapreduce_am_env=HADOOP_MAPRED_HOME=/opt/hadoop-3.2.1/
+MAPRED_CONF_mapreduce_map_env=HADOOP_MAPRED_HOME=/opt/hadoop-3.2.1/
+MAPRED_CONF_mapreduce_reduce_env=HADOOP_MAPRED_HOME=/opt/hadoop-3.2.1/
+```
+3. You can now start your container:
 ```bash
 docker-compose up -d
 ```
-3. When finished , you can browse http://localhost:8088 to view the cluster information .
-4. Finally stop the cluster by :
+4. Browse your http://localhost:9870 and check your cluster .
+5. Finally :
 ```bash
 docker-compose down
 ```
+to stop your cluster .
