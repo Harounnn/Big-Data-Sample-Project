@@ -86,7 +86,7 @@ MAPRED_CONF_yarn_app_mapreduce_am_env=HADOOP_MAPRED_HOME=/opt/hadoop-3.2.1/
 MAPRED_CONF_mapreduce_map_env=HADOOP_MAPRED_HOME=/opt/hadoop-3.2.1/
 MAPRED_CONF_mapreduce_reduce_env=HADOOP_MAPRED_HOME=/opt/hadoop-3.2.1/
 ```
-3. You can now start your container:
+3. Change directory where the docker-compose file exists and you can now start your container:
 ```bash
 docker-compose up -d
 ```
@@ -96,3 +96,47 @@ docker-compose up -d
 docker-compose down
 ```
 to stop your cluster .
+
+## Part 2 - Apache Spark using Docker : PySpark
+**We will setup a 3-node spark cluster**
+1. In a seperate directory , create another 'docker-compose.yml' file :
+```
+version: '1.0'
+
+services:
+  spark-master:
+    image: bitnami/spark:latest
+    command: bin/spark-class org.apache.spark.deploy.master.Master
+    ports:
+    - 9090:8080
+    - 7077:7077 
+  spark-worker-1:
+    image: bitnami/spark:latest
+    command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    depends_on:
+      - spark-master
+    environment:
+      SPARK_MODE: worker
+      SPARK_WORKER_CORES: 2
+      SPARK_WORKER_MEMORY: 2g
+      SPARK_MASTER_URL: spark://spark-master:7077
+  spark-worker-2:
+    image: bitnami/spark:latest
+    command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    depends_on:
+      - spark-master
+    environment:
+      SPARK_MODE: worker
+      SPARK_WORKER_CORES: 2
+      SPARK_WORKER_MEMORY: 2g
+      SPARK_MASTER_URL: spark://spark-master:7077
+```
+2. Run the following command to check the cluster is healthy:
+```bash
+docker-compose up -d
+```
+and
+```bash
+docker logs sparkmaster
+```
+and note the URL of the master (it will be used later).
