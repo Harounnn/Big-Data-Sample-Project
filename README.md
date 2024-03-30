@@ -106,12 +106,14 @@ version: '1.0'
 services:
   spark-master:
     image: bitnami/spark:latest
+    container_name: spark-master
     command: bin/spark-class org.apache.spark.deploy.master.Master
     ports:
     - 9090:8080
     - 7077:7077 
   spark-worker-1:
     image: bitnami/spark:latest
+    container_name: spark-worker1
     command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
     depends_on:
       - spark-master
@@ -122,6 +124,7 @@ services:
       SPARK_MASTER_URL: spark://spark-master:7077
   spark-worker-2:
     image: bitnami/spark:latest
+    container_name: spark-worker2
     command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
     depends_on:
       - spark-master
@@ -137,6 +140,36 @@ docker-compose up -d
 ```
 and
 ```bash
-docker logs sparkmaster
+docker logs spark-master
 ```
 and note the URL of the master (it will be used later).
+3. Create a python program under name 'sample_pyspark.py' :
+```
+# Import the necessary modules
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import *
+
+# Create a SparkSession
+spark = SparkSession.builder \
+   .appName("My App") \
+   .getOrCreate()
+
+rdd = spark.sparkContext.parallelize(range(1, 100))
+
+print("THE SUM IS HERE: ", rdd.sum())
+# Stop the SparkSession
+spark.stop()
+```
+4. Then type this command the submit the job :
+```bash
+docker-compose exec spark-master spark-submit --master spark://{MASTER_URL}:7077 sample_pyspark.py
+```
+and you will get an output that looks like this
+![capture](./img/Capture1.PNG)
+5. Now you are done and have a working sample example you can run this to stop your cluster :
+```bash
+docker-compose down
+```
+
+## Part 3 - Choose a dataset and perform a real-world example :
+To be continued
