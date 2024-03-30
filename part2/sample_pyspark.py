@@ -1,16 +1,14 @@
+# Import the necessary modules
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import *
 
 # Create a SparkSession
-spark = SparkSession.builder.appName("Spark Test App").getOrCreate()
+spark = SparkSession.builder \
+   .appName("My App") \
+   .getOrCreate()
 
-# Read some data (modify path as needed)
-data = spark.read.text("/path/to/data.txt")
+rdd = spark.sparkContext.parallelize(range(1, 100))
 
-# Do some basic transformations (count number of lines)
-num_lines = data.count()
-
-# Print the results
-print(f"Number of lines: {num_lines}")
-
+print("THE SUM IS HERE: ", rdd.sum())
 # Stop the SparkSession
 spark.stop()
