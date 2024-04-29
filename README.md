@@ -145,6 +145,34 @@ CMD [ "sh", "-c", "service ssh start; bash"]
 ```
 **and use this image in your 'docker-compose.yml' instead of the predefined one file**
 
+We can test the MapReduce too .
+We have a data file named "purchases.txt" and two python files : "mapper.py" and "reducer.py" .
+
+Just perform these steps and you're done :
+
+**1.**
+```bash
+docker exec -it namenode sh
+```
+To start a new shell session inside "namenode" container .
+
+**2.**
+```bash
+hadoop fs -mkdir input
+
+hadoop fs -put purchases.txt input/
+
+hadoop fs -put mapper.py /
+hadoop fs -put reducer.py /
+```
+To copy the data file and the MapReduce python files into HDFS(Hadoop Distributed File System)
+
+**3.**
+```bash
+hadoop jar COAMMAND
+```
+To start the MapReduce job .
+
 ## Part 2 - Apache Spark using Docker : PySpark
 **We will setup a 3-node spark cluster**
 1. In a seperate directory , create another 'docker-compose.yml' file :
@@ -213,7 +241,7 @@ spark.stop()
 docker-compose exec spark-master spark-submit --master spark://{MASTER_URL}:7077 sample_pyspark.py
 ```
 and you will get an output that looks like this
-![capture](./img/Capture1.PNG)
+![capture](./img/sparktest.PNG)
 5. Now you are done and have a working sample example you can run this to stop your cluster :
 ```bash
 docker-compose down
