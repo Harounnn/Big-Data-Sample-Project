@@ -302,16 +302,50 @@ print("THE SUM IS HERE: ", rdd.sum())
 # Stop the SparkSession
 spark.stop()
 ```
-4. Then type this command the submit the job :
+
+4. Type this command to copy the python script containinng pyspark code :
+```bash
+docker cp sample_pyspark.py spark-master:/opt/bitnami/spark/sample_pyspark.py
+```
+5. Then type this command the submit the job :
 ```bash
 docker-compose exec spark-master spark-submit --master spark://{MASTER_URL}:7077 sample_pyspark.py
 ```
 and you will get an output that looks like this
 ![capture](./img/sparktest.PNG)
-5. Now you are done and have a working sample example you can run this to stop your cluster :
+6. Now you are done and have a working sample example you can run this to stop your cluster :
 ```bash
 docker-compose down
 ```
 
 ## Part 3 - Choose a dataset and perform a real-world example :
-To be continued
+**We will be using the same docker-compose file in Part2.**
+
+So first of all, we will check spark again , it is simple :
+1. Run the famous command to start your cluster :
+```bash
+docker-compose up -d
+```
+
+2. 
+```bash
+docker exec -it spark-master bash
+```
+
+3. 
+```bash
+spark-shell
+```
+
+And you will get an output like this :
+![capture](./img/spark-shell.PNG)
+
+Now , we have to choose a dataset and perform some analysis using pySpark .
+
+**Dataset link :** [Spotify Charts](https://www.kaggle.com/datasets/sunnykakar/spotify-charts-all-audio-data/data)
+
+**Size :** about 28GB (3GB compressed)
+
+**Columns :** 29
+
+**-->** It is a pretty good dataset to perform some Big Data Analytics .
