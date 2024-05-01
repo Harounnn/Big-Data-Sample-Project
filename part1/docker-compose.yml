@@ -1,4 +1,4 @@
-version: "2.0"
+version: "4"
 
 services:
   namenode:
@@ -17,7 +17,7 @@ services:
 
   datanode1:
     image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
-    container_name: datanode
+    container_name: datanode1
     restart: always
     volumes:
       - hadoop_datanode1:/hadoop/dfs/data
@@ -47,6 +47,7 @@ services:
       SERVICE_PRECONDITION: "namenode:9870"
     env_file:
       - ./hadoop.env
+
   
 volumes:
   hadoop_namenode:

@@ -8,7 +8,7 @@ docker-compose version
 In this part, we will setup a 4-node hadoop cluster (1 master & 3 slaves)
 1. Write the following inside 'docker-compose.yml' file :
 ```
-version: "2.0"
+version: "X"
 
 services:
   namenode:
@@ -27,7 +27,7 @@ services:
 
   datanode1:
     image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
-    container_name: datanode
+    container_name: datanode1
     restart: always
     volumes:
       - hadoop_datanode1:/hadoop/dfs/data
@@ -58,11 +58,41 @@ services:
     env_file:
       - ./hadoop.env
   
+  resourcemanager:
+    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.2.1-java8
+    container_name: resourcemanager
+    restart: always
+    environment:
+      SERVICE_PRECONDITION: "namenode:9000 namenode:9870 datanode:9864"
+    env_file:
+      - ./hadoop.env
+
+  nodemanager1:
+    image: bde2020/hadoop-nodemanager:2.0.0-hadoop3.2.1-java8
+    container_name: nodemanager
+    restart: always
+    environment:
+      SERVICE_PRECONDITION: "namenode:9000 namenode:9870 datanode:9864 resourcemanager:8088"
+    env_file:
+      - ./hadoop.env
+  
+  historyserver:
+    image: bde2020/hadoop-historyserver:2.0.0-hadoop3.2.1-java8
+    container_name: historyserver
+    restart: always
+    environment:
+      SERVICE_PRECONDITION: "namenode:9000 namenode:9870 datanode:9864 resourcemanager:8088"
+    volumes:
+      - hadoop_historyserver:/hadoop/yarn/timeline
+    env_file:
+      - ./hadoop.env
+  
 volumes:
   hadoop_namenode:
   hadoop_datanode1:
   hadoop_datanode2:
   hadoop_datanode3:
+  hadoop_historyserver:
 ```
 2. Save and create a file 'hadoop.env' and write inside it :
 ```
@@ -75,6 +105,30 @@ CORE_CONF_io_compression_codecs=org.apache.hadoop.io.compress.SnappyCodec
 HDFS_CONF_dfs_webhdfs_enabled=true
 HDFS_CONF_dfs_permissions_enabled=false
 HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check=false
+
+YARN_CONF_yarn_log___aggregation___enable=true
+YARN_CONF_yarn_log_server_url=http://historyserver:8188/applicationhistory/logs/
+YARN_CONF_yarn_resourcemanager_recovery_enabled=true
+YARN_CONF_yarn_resourcemanager_store_class=org.apache.hadoop.yarn.server.resourcemanager.recovery.FileSystemRMStateStore
+YARN_CONF_yarn_resourcemanager_scheduler_class=org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.CapacityScheduler
+YARN_CONF_yarn_scheduler_capacity_root_default_maximum___allocation___mb=8192
+YARN_CONF_yarn_scheduler_capacity_root_default_maximum___allocation___vcores=4
+YARN_CONF_yarn_resourcemanager_fs_state___store_uri=/rmstate
+YARN_CONF_yarn_resourcemanager_system___metrics___publisher_enabled=true
+YARN_CONF_yarn_resourcemanager_hostname=resourcemanager
+YARN_CONF_yarn_resourcemanager_address=resourcemanager:8032
+YARN_CONF_yarn_resourcemanager_scheduler_address=resourcemanager:8030
+YARN_CONF_yarn_resourcemanager_resource__tracker_address=resourcemanager:8031
+YARN_CONF_yarn_timeline___service_enabled=true
+YARN_CONF_yarn_timeline___service_generic___application___history_enabled=true
+YARN_CONF_yarn_timeline___service_hostname=historyserver
+YARN_CONF_mapreduce_map_output_compress=true
+YARN_CONF_mapred_map_output_compress_codec=org.apache.hadoop.io.compress.SnappyCodec
+YARN_CONF_yarn_nodemanager_resource_memory___mb=16384
+YARN_CONF_yarn_nodemanager_resource_cpu___vcores=8
+YARN_CONF_yarn_nodemanager_disk___health___checker_max___disk___utilization___per___disk___percentage=98.5
+YARN_CONF_yarn_nodemanager_remote___app___log___dir=/app-logs
+YARN_CONF_yarn_nodemanager_aux___services=mapreduce_shuffle
 
 MAPRED_CONF_mapreduce_framework_name=yarn
 MAPRED_CONF_mapred_child_java_opts=-Xmx4096m
@@ -91,6 +145,7 @@ MAPRED_CONF_mapreduce_reduce_env=HADOOP_MAPRED_HOME=/opt/hadoop-3.2.1/
 docker-compose up -d
 ```
 4. Browse your http://localhost:9870 and check your cluster .
+![capture](./img/hadoopUI.PNG)
 5. Finally :
 ```bash
 docker-compose down
@@ -152,24 +207,34 @@ Just perform these steps and you're done :
 
 **1.**
 ```bash
+docker cp purchases.txt namenode:purchases.txt
+docker cp mapper.py namenode:mapper.py
+docker cp reducer.py namenode:reducer.py
+```
+To copy the files from local to the namenode container.
+
+**2.**
+```bash
 docker exec -it namenode sh
 ```
 To start a new shell session inside "namenode" container .
 
-**2.**
+**3.**
 ```bash
-hadoop fs -mkdir input
+hadoop fs -mkdir /input
 
-hadoop fs -put purchases.txt input/
+
+hadoop fs -put purchases.txt /input
 
 hadoop fs -put mapper.py /
 hadoop fs -put reducer.py /
 ```
 To copy the data file and the MapReduce python files into HDFS(Hadoop Distributed File System)
 
-**3.**
+**4.**
 ```bash
-hadoop jar COAMMAND
+hadoop jar $HADOOP_HOME/share/hadoop/tools/lib/hadoop-streaming-3.2.1.jar -
+file ./mapper.py -mapper mapper.py -file ./reducer.py -reducer reducer.py -input /input/purchases.txt -output /out
 ```
 To start the MapReduce job .
 
@@ -219,6 +284,7 @@ and
 docker logs spark-master
 ```
 and note the URL of the master (it will be used later).
+
 3. Create a python program under name 'sample_pyspark.py' :
 ```
 # Import the necessary modules
