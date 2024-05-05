@@ -349,3 +349,68 @@ Now , we have to choose a dataset and perform some analysis using pySpark .
 **Columns :** 29
 
 **-->** It is a pretty good dataset to perform some Big Data Analytics .
+
+4. Now, we will modify our docker-compose.yml file to get spark use HDFS as an external storage for our data :
+```
+version: '1.0'
+
+services:
+  spark-master:
+    image: bitnami/spark:latest
+    container_name: spark-master
+    command: bin/spark-class org.apache.spark.deploy.master.Master
+    ports:
+    - 9090:8080
+    - 7077:7077 
+    environment:
+      SPARK_MASTER_URL: spark://spark-master:7077
+      HADOOP_CONF_DIR: /opt/bitnami/hadoop/conf
+  spark-worker-1:
+    image: bitnami/spark:latest
+    container_name: spark-worker1
+    command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    depends_on:
+      - spark-master
+    environment:
+      SPARK_MODE: worker
+      SPARK_WORKER_CORES: 2
+      SPARK_WORKER_MEMORY: 2g
+      SPARK_MASTER_URL: spark://spark-master:7077
+  spark-worker-2:
+    image: bitnami/spark:latest
+    container_name: spark-worker2
+    command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    depends_on:
+      - spark-master
+    environment:
+      SPARK_MODE: worker
+      SPARK_WORKER_CORES: 2
+      SPARK_WORKER_MEMORY: 2g
+      SPARK_MASTER_URL: spark://spark-master:7077
+  hdfs-namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: hdfs-namenode
+    ports:
+      - 9000:9000 
+      - 8080:8080 
+    env_file:
+      ./hadoop.env
+    volumes:
+      - hdfs-data:/hadoop/namenode  
+    environment:
+      - CLUSTER_NAME=mycluster
+  hdfs-datanode-1:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: hdfs-datanode-1
+    depends_on:
+      - hdfs-namenode  
+    volumes:
+      - hdfs-data:/hadoop/datanode  
+    environment:
+      DFS_DATANODE_NAME_SERVICE_HOST: hdfs-namenode 
+      DFS_DATANODE_DATA_DIR: /hadoop/datanode 
+      DFS_NAMENODE_RPC_ADDRESS: hdfs-namenode:8020 
+
+volumes:
+  hdfs-data: {}
+```
