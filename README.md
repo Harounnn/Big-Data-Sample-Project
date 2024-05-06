@@ -350,67 +350,61 @@ Now , we have to choose a dataset and perform some analysis using pySpark .
 
 **-->** It is a pretty good dataset to perform some Big Data Analytics .
 
-4. Now, we will modify our docker-compose.yml file to get spark use HDFS as an external storage for our data :
+**We will be using our local system as the external storage .**
+
+4. Now, we have to copy our data file to all nodes of our cluster:
+```bash
+docker cp {Path/to/local/data} {CONTAINER_NAME}:/opt/bitnami/spark/data.csv
 ```
-version: '1.0'
 
-services:
-  spark-master:
-    image: bitnami/spark:latest
-    container_name: spark-master
-    command: bin/spark-class org.apache.spark.deploy.master.Master
-    ports:
-    - 9090:8080
-    - 7077:7077 
-    environment:
-      SPARK_MASTER_URL: spark://spark-master:7077
-      HADOOP_CONF_DIR: /opt/bitnami/hadoop/conf
-  spark-worker-1:
-    image: bitnami/spark:latest
-    container_name: spark-worker1
-    command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
-    depends_on:
-      - spark-master
-    environment:
-      SPARK_MODE: worker
-      SPARK_WORKER_CORES: 2
-      SPARK_WORKER_MEMORY: 2g
-      SPARK_MASTER_URL: spark://spark-master:7077
-  spark-worker-2:
-    image: bitnami/spark:latest
-    container_name: spark-worker2
-    command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
-    depends_on:
-      - spark-master
-    environment:
-      SPARK_MODE: worker
-      SPARK_WORKER_CORES: 2
-      SPARK_WORKER_MEMORY: 2g
-      SPARK_MASTER_URL: spark://spark-master:7077
-  hdfs-namenode:
-    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
-    container_name: hdfs-namenode
-    ports:
-      - 9000:9000 
-      - 8080:8080 
-    env_file:
-      ./hadoop.env
-    volumes:
-      - hdfs-data:/hadoop/namenode  
-    environment:
-      - CLUSTER_NAME=mycluster
-  hdfs-datanode-1:
-    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
-    container_name: hdfs-datanode-1
-    depends_on:
-      - hdfs-namenode  
-    volumes:
-      - hdfs-data:/hadoop/datanode  
-    environment:
-      DFS_DATANODE_NAME_SERVICE_HOST: hdfs-namenode 
-      DFS_DATANODE_DATA_DIR: /hadoop/datanode 
-      DFS_NAMENODE_RPC_ADDRESS: hdfs-namenode:8020 
+5. Let's write a pySpark program to perform some analysis :
+```
+from pyspark.sql import SparkSession
 
-volumes:
-  hdfs-data: {}
+spark = SparkSession.builder \
+    .appName("MusicDataAnalysis") \
+    .getOrCreate()
+
+data_path = "file:///opt/bitnami/spark/data.csv"
+df = spark.read.csv(data_path, header=True)
+
+df.show(5)
+
+df.describe().show()
+
+
+num_artists = df.select("artist").distinct().count()
+print("Number of unique artists:", num_artists)
+
+most_popular_chart = df.groupBy("chart") \
+    .count() \
+    .orderBy("count", descending=True) \
+    .head(1) \
+    ["chart"] \
+    .first()
+print("Most popular chart:", most_popular_chart)
+
+
+df_with_date = df.withColumn("date", df["date"].cast("date"))
+df_by_date = df_with_date.groupBy("date") \
+    .agg(
+        {"artist": "count"}).orderBy("date")
+
+spark.stop()
+```
+and move this file to the spark master as well
+```bash
+docker cp analysis.py spark-master:/opt/bitnami/spark/analysis.py
+```
+
+6. Run this command to run the spark job and we are done :
+```bash
+docker-compose exec spark-master spark-submit --master spark://{SPARK_MASTER_URL}:7077 analysis.py
+```
+
+![capture](./img/job.PNG)
+
+7. Stop the cluster :
+```bash
+docker-compose down
 ```

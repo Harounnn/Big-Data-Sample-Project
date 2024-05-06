@@ -33,29 +33,3 @@ services:
       SPARK_WORKER_CORES: 2
       SPARK_WORKER_MEMORY: 2g
       SPARK_MASTER_URL: spark://spark-master:7077
-  hdfs-namenode:
-    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
-    container_name: hdfs-namenode
-    ports:
-      - 9000:9000 
-      - 8080:8080 
-    env_file:
-      ./hadoop.env
-    volumes:
-      - hdfs-data:/hadoop/namenode  
-    environment:
-      - CLUSTER_NAME=mycluster
-  hdfs-datanode-1:
-    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
-    container_name: hdfs-datanode-1
-    depends_on:
-      - hdfs-namenode  
-    volumes:
-      - hdfs-data:/hadoop/datanode  
-    environment:
-      DFS_DATANODE_NAME_SERVICE_HOST: hdfs-namenode 
-      DFS_DATANODE_DATA_DIR: /hadoop/datanode 
-      DFS_NAMENODE_RPC_ADDRESS: hdfs-namenode:8020 
-
-volumes:
-  hdfs-data: {}
